@@ -1,137 +1,86 @@
-from matplotlib import pyplot as plt
 import numpy as np
-from math import e
-import math
+import matplotlib.pyplot as plt
 
-num_points = 1
-total_num_points = 250000
-EPS = 1e-1
+NUM_POINTS = 250000
+EPSILON = 1e-1
 
 
 def check_distribution(data, mean, std_dev):
-    return abs(np.mean(data) - mean) <= EPS and abs(np.std(data) - std_dev) <= EPS
+    return abs(np.mean(data) - mean) <= EPSILON and abs(np.std(data) - std_dev) <= EPSILON
 
 
-def plot_points(x,y, distribution_name):
-    plt.plot(x,y)
-    plt.title("Distribution " + distribution_name)
+def plot_distribution(data, title):
+    plt.hist(data, bins=NUM_POINTS // 500)
+    plt.title(title)
     plt.show()
 
 
-def gamma_distribution_generator(v):
+def gamma_distribution(alpha, lambda_, v):
     c = 1 / v
     xi = v ** (v / (1 - v))
-    a = math.e ** (xi * (v - 1))
+    a = np.exp(xi * (v - 1))
 
-    while True:
-        U = np.random.uniform(low=0, high=1, size=num_points)
-        Y = ((-1) * np.log(U)) ** c
-        res = a * e ** ((Y ** v) - Y)
-        if np.all(U <= res):
-            break
-    X = Y
-    return X[0]
+    u = np.random.uniform(low=0, high=1, size=NUM_POINTS)
+    y = ((-1) * np.log(u)) ** c
+    res = a * np.exp((y ** v) - y)
+    x = y[y <= res]
 
+    x /= lambda_
+    x += alpha
 
-def gamma_distribution():
-    Y = []
-
-    alpha = 3
-    lambda_ = 2
-    v = 0.17
-
-    for i in range(total_num_points):
-        Y.append(gamma_distribution_generator(v))
-
-    Y = np.array(Y)
-
-    # transforming the Gamma distribution from (0, 1, v) to (alpha, lambda, v)
-    Y /= lambda_
-    Y += alpha
-
-    plt.hist(Y, bins=total_num_points // 500)
-    plt.show()
+    plot_distribution(x, "Gamma Distribution")
     print("*" * 10)
     print("Gamma distribution:")
-
-    print("Mean of generated data: ", np.mean(Y))
-    print("Variance of generated data: ", np.std(Y) ** 2)
-    print("Std dev of generated data: ", np.std(Y))
+    print("Mean of generated data:", np.mean(x))
+    print("Variance of generated data:", np.var(x))
+    print("Std dev of generated data:", np.std(x))
 
     mean = alpha + v / lambda_
     variance = v / (lambda_ ** 2)
+    print("Mean (formula):", mean)
+    print("Variance (formula):", variance)
+    print("Std dev (formula):", np.sqrt(variance))
 
-    print("Mean (formula): ", mean)
-    print("Variance (formula) : ", variance)
-    print("Std dev (formula): ", math.sqrt(variance))
-
-    if check_distribution(Y, mean, np.sqrt(variance)):
-        print("The generated distribution has the right mean and standard "
-              "deviation")
+    if check_distribution(x, mean, np.sqrt(variance)):
+        print("The generated distribution has the correct mean and standard deviation.")
     else:
-        print("The generated distribution does not have the right mean and "
-              "standard deviation")
+        print("The generated distribution does not have the correct mean and standard deviation.")
     print("*" * 10)
 
 
-def normal_distribution_generator():
-    while True:
-        U = np.random.uniform(low=0, high=1, size=num_points)
-        Y = np.random.exponential(scale=1, size=num_points)
-        res = e ** ((-1) * (Y ** 2) / 2 + Y - 0.5)
-        if np.all(U <= res):
-            break
-    X1 = Y
-    U = np.random.uniform(low=0, high=1, size=num_points)
-    if U <= 0.5:
-        s = 1
-    else:
-        s = -1
-    X = s * X1
-    return X[0]
+def normal_distribution(mean, variance):
+    u = np.random.uniform(low=0, high=1, size=NUM_POINTS)
+    y1 = np.random.exponential(scale=1, size=NUM_POINTS)
+    res = np.exp((-1) * (y1 ** 2) / 2 + y1 - 0.5)
+    y = y1[u <= res]
+    s = np.random.choice([-1, 1], size=y.shape, p=[0.5, 0.5])
+    x = s * y
 
+    x *= np.sqrt(variance)
+    x += mean
 
-def normal_distribution():
-    Y = []
-    mean = 2
-    variance = 3
-    for i in range(total_num_points):
-        Y.append(normal_distribution_generator())
-
-
-    Y = np.array(Y)
-    print(np.mean(Y))
-    Y *= math.sqrt(variance)
-    Y += mean
-
-    plt.hist(Y, bins=total_num_points // 500)
-    plt.show()
+    plot_distribution(x, "Normal Distribution")
     print("*" * 10)
-
     print("Normal distribution:")
+    print("Mean of generated data:", np.mean(x))
+    print("Variance of generated data:", np.var(x))
+    print("Std dev of generated data:", np.std(x))
 
-    print("Mean of generated data: ", np.mean(Y))
-    print("Variance of generated data: ", np.std(Y) ** 2)
-    print("Std dev of generated data: ", np.std(Y))
+    print("Mean (formula):", mean)
+    print("Variance (formula):", variance)
+    print("Std dev (formula):", np.sqrt(variance))
 
-    print("Mean (formula): ", mean)
-    print("Variance (formula) : ", variance)
-    print("Std dev (formula): ", math.sqrt(variance))
-
-    if check_distribution(Y, mean, math.sqrt(variance)):
-        print("The generated distribution has the right mean and standard "
-              "deviation")
+    if check_distribution(x, mean, np.sqrt(variance)):
+        print("The generated distribution has the correct mean and standard deviation.")
     else:
-        print("The generated distribution does not have the right mean and "
-              "standard deviation")
+        print("The generated distribution does not have the correct mean and standard deviation.")
     print("*" * 10)
 
 
 def main():
-    gamma_distribution()
-    normal_distribution()
+    gamma_distribution(alpha=3, lambda_=2, v=0.17)
+    normal_distribution(mean=2, variance=3)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
-
